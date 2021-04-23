@@ -21,12 +21,12 @@ class _AlarmState extends State<Alarm> {
   String time = "0000";
   int i = 1;
 
-  var words = <String, int>{'vibrate': 1, 'duration': 1};
-  var data = <String, String>{
-    'time': 'null',
-    'ringtone': 'sasageyo',
-    'label': 'alarm'
-  };
+  // var words = <String, int>{'vibrate': 1, 'duration': 1};
+  // var data = <String, String>{
+  //   'time': 'null',
+  //   'ringtone': 'sasageyo',
+  //   'label': 'alarm'
+  // };
 
   Future<String> createDialog(BuildContext context) {
     TextEditingController controller = TextEditingController();
@@ -66,7 +66,12 @@ class _AlarmState extends State<Alarm> {
             Text("Set Alarm"),
             IconButton(
               icon: Icon(Icons.check),
-              onPressed: () {
+              onPressed: () async {
+                var e = await DBProvider.db.getAllClients();
+                if (e.length != 0) {
+                  print("db full");
+                  return Navigator.pop(context);
+                }
                 var newAlarm = Client(
                     id: i,
                     time: time,
@@ -75,9 +80,7 @@ class _AlarmState extends State<Alarm> {
                     label: label);
 
                 DBProvider.db.newClient(newAlarm);
-                setState(() {
-                  i++;
-                });
+                
                 Navigator.pop(context);
               },
             )

@@ -1,11 +1,33 @@
 import 'package:sasageyo/alarm.dart';
 import 'package:sasageyo/ringtone.dart';
+import 'package:sasageyo/utils/clientModel.dart';
 import 'package:sasageyo/utils/database.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-void main() {
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  var initializationSettingsAndroid = AndroidInitializationSettings('clock');
+  var initializationSettingsIOS = IOSInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+      onDidReceiveLocalNotification:
+          (int id, String title, String body, String payload) async {});
+  var initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid, iOS: initializationSettingsIOS);
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings,
+      onSelectNotification: (String payload) async {
+    if (payload != null) {
+      debugPrint('notification payload: ' + payload);
+    }
+  });
   runApp(MaterialApp(
     routes: {
       '/time': (context) => TimeOfDays(),
@@ -27,7 +49,11 @@ class TimeOfDays extends StatefulWidget {
 }
 
 class _TimeOfDaysState extends State<TimeOfDays> {
-  var c;
+  // var c;
+  Map<String, String> newuser = {};
+
+  var _alarms;
+  // DBProvider data = new DBProvider.db();
 
   @override
   void initState() {
@@ -35,6 +61,12 @@ class _TimeOfDaysState extends State<TimeOfDays> {
       setState(() {});
     });
     super.initState();
+  }
+
+  get() async {
+    var data = await DBProvider.db.getAllClients();
+    _alarms = data;
+    return data;
   }
 
   String _timeString;
@@ -52,77 +84,105 @@ class _TimeOfDaysState extends State<TimeOfDays> {
     });
   }
 
-  void getSecond() {
-    var d = DateFormat('k k:mm:ss').format(DateTime.now()).toString();
+  Widget alarm() {
+    return FutureBuilder(
+        future: _alarms,
+        builder: (BuildContext context, snapshot) {
+          // if (snapshot.data.length == 0) {
+          //   print("No elements in db");
+          //   return Container(
+          //     child: Text("No alarm"),
+          //   );
+          // }
+          if (snapshot.hasData) {
+            return ListTile(
+              title: Text(snapshot.data[0].label),
+            );
+          } else {
+            if (snapshot.hasError) {
+              print(snapshot.error);
+            }
+            return Container(
+              child: Text("No alarm"),
+            );
+          }
+
+          // print(index.data);
+        });
   }
 
   Widget alarmList() {
+    get();
     return Column(
       children: [
-        ListTile(
-          title: Text("Alarm 1",
-              style: TextStyle(fontSize: 20, color: Colors.white)),
-          // subtitle: Text("1 minute"),
-          onTap: () {
-            print("Tapped 1");
-          },
-        ),
-        ListTile(
-          title: Text("Alarm 2",
-              style: TextStyle(fontSize: 20, color: Colors.white)),
-          // subtitle: Text("Sasageyo"),
-          onTap: () {
-            print("Tapped 1");
-          },
-        ),
-        ListTile(
-          title: Text("Alarm 3",
-              style: TextStyle(fontSize: 20, color: Colors.white)),
-          // subtitle: Text("Wake up"),
-          onTap: () {
-            print("Tapped 1");
-          },
-        ),
-        // ListView.builder(
-        //   itemCount: c.length,
-        //   itemBuilder: (BuildContext context, index) {
-        //     return ListTile(
-        //       title: Text(c[index].title),
-        //     );
-        //   },
-        // )
+        _alarms != null
+            ? (_alarms.length != 0
+                ? (ListTile(
+                    title: Text("Alarm set at 4:20",
+                        style: TextStyle(fontSize: 20, color: Colors.white)),
+                    onTap: () {
+                      print("Tapped 1");
+                    },
+                  ))
+                : (ListTile(
+                    title: Text("No Alarms",
+                        style: TextStyle(fontSize: 20, color: Colors.white)),
+                    onTap: () {
+                      print("Tapped 1");
+                    },
+                  )))
+            : Container()
       ],
     );
   }
 
-  // Widget check() {
-  //   return Column(
-  //     children: [Text(DBProvider.db.getClient(1))],
-  //   );
-  // }
-
   Widget del() {
+    var d;
     return MaterialButton(
         child: Text("Delete all"),
-        onPressed: () {
-          DBProvider.db.deleteAll();
-          print(Text("All deleted"));
+        onPressed: () async {
+          d = await DBProvider.db.getAllClients();
+          if (d.length == 0) {
+            print("No items to be deleted");
+          } else {
+            DBProvider.db.deleteAll();
+            print(Text("All deleted"));
+          }
         });
   }
 
   Widget getAll() {
+    var e;
     return MaterialButton(
         child: Text(
           "Print all",
           style: TextStyle(color: Colors.white),
         ),
         onPressed: () async {
-          c = await DBProvider.db.getAllClients();
-
-          print(DBProvider.db.getAllClients());
-          print(c[0].time);
-          print(c[0].label);
+          e = await DBProvider.db.getAllClients();
+          if (e.length != 0) {
+            print(DBProvider.db.getAllClients());
+            print("Time is" + e[0].time);
+            print(e[0].label);
+          } else {
+            print('No items in db');
+          }
         });
+  }
+
+  showNotification() async {
+    var androidDetails = AndroidNotificationDetails(
+        'Channel ID', 'Adithya Anbu', 'my channel',
+        importance: Importance.max);
+    var iosDetails = IOSNotificationDetails(
+        presentAlert: true,
+        presentBadge: true,
+        presentSound: true);
+
+    var generalNotifications =
+        NotificationDetails(android: androidDetails, iOS: iosDetails);
+    await flutterLocalNotificationsPlugin.show(
+        0, "title", "body", generalNotifications);
   }
 
   @override
@@ -146,7 +206,7 @@ class _TimeOfDaysState extends State<TimeOfDays> {
             ),
             alarmList(),
             del(),
-            getAll(),
+            // getAll(),
             FloatingActionButton(
                 backgroundColor: Colors.white70,
                 child: Icon(
@@ -158,7 +218,11 @@ class _TimeOfDaysState extends State<TimeOfDays> {
                     context,
                     '/alarm',
                   );
-                })
+                }),
+            MaterialButton(
+              onPressed: showNotification,
+              child: Text("Notification"),
+            )
           ],
         ),
       ),

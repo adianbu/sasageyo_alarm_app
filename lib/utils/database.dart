@@ -70,10 +70,39 @@ class DBProvider {
     return list;
   }
 
+  Future<List<Client>> getAlarms() async {
+    List<Client> _alarms = [];
+
+    var db = await this.database;
+    var result = await db.query("Client");
+    result.forEach((element) {
+      var alarmInfo = Client.fromMap(element);
+      _alarms.add(alarmInfo);
+    });
+
+    return _alarms;
+  }
+
+  deleteClient(int id) async {
+    final db = await database;
+    db.delete("Client", where: "id = ?", whereArgs: [id]);
+  }
+
   deleteAll() async {
     final db = await database;
     // db.rawDelete("Delete* from Client");
     db.delete("Client");
     print("Deleted");
+  }
+
+  Future<dynamic> getClientNew() async {
+    final db = await database;
+    var res = await db.query("Client");
+    if (res.length == 0) {
+      return null;
+    } else {
+      var resMap = res[0];
+      return resMap.isNotEmpty ? resMap : Null;
+    }
   }
 }
