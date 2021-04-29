@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:flutter/scheduler.dart';
 import 'package:sasageyo/alarm.dart';
 import 'package:sasageyo/ringtone.dart';
 import 'package:sasageyo/utils/clientModel.dart';
@@ -7,9 +10,11 @@ import 'dart:async';
 import 'package:intl/intl.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_local_notifications/src/platform_specifics/android/enums.dart';
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -27,6 +32,7 @@ void main() async {
     if (payload != null) {
       debugPrint('notification payload: ' + payload);
     }
+    await flutterLocalNotificationsPlugin.cancel(0);
   });
   runApp(MaterialApp(
     routes: {
@@ -37,7 +43,7 @@ void main() async {
     home: Scaffold(
       body: SizedBox(
         width: double.infinity,
-        child: TimeOfDays(),
+        child: Alarm(),
       ),
     ),
   ));
@@ -49,17 +55,30 @@ class TimeOfDays extends StatefulWidget {
 }
 
 class _TimeOfDaysState extends State<TimeOfDays> {
-  // var c;
-  Map<String, String> newuser = {};
-
   var _alarms;
-  // DBProvider data = new DBProvider.db();
+  int alarmBit;
 
   @override
   void initState() {
     Timer.periodic(Duration(seconds: 1), (timer) {
       setState(() {});
     });
+
+    Timer.periodic(Duration(seconds: 1), (Timer t) {
+      var now = DateTime.now();
+      var currentTime =
+          DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+      // DateTime d = DateFormat('kk:mm:ss', 'en-US').parseLoose('22:59:30');
+      var startTime = DateTime(now.year, now.month, now.day, 19, 22, 0);
+
+      if (currentTime.millisecondsSinceEpoch ==
+          startTime.millisecondsSinceEpoch) {
+        print("show notification");
+        showNotification();
+      }
+    });
+
     super.initState();
   }
 
@@ -70,10 +89,8 @@ class _TimeOfDaysState extends State<TimeOfDays> {
   }
 
   String _timeString;
-  // TimeOfDay t = TimeOfDay.now();
   var time = DateTime.now();
 
-  // var t = Timer.periodic(Duration );
   void getTime() {
     final String formattedDateTime =
         DateFormat('k k:mm:ss').format(DateTime.now()).toString();
@@ -84,32 +101,30 @@ class _TimeOfDaysState extends State<TimeOfDays> {
     });
   }
 
-  Widget alarm() {
-    return FutureBuilder(
-        future: _alarms,
-        builder: (BuildContext context, snapshot) {
-          // if (snapshot.data.length == 0) {
-          //   print("No elements in db");
-          //   return Container(
-          //     child: Text("No alarm"),
-          //   );
-          // }
-          if (snapshot.hasData) {
-            return ListTile(
-              title: Text(snapshot.data[0].label),
-            );
-          } else {
-            if (snapshot.hasError) {
-              print(snapshot.error);
-            }
-            return Container(
-              child: Text("No alarm"),
-            );
-          }
-
-          // print(index.data);
-        });
-  }
+  // Widget alarm() {
+  //   return FutureBuilder(
+  //       future: _alarms,
+  //       builder: (BuildContext context, snapshot) {
+  //         // if (snapshot.data.length == 0) {
+  //         //   print("No elements in db");
+  //         //   return Container(
+  //         //     child: Text("No alarm"),
+  //         //   );
+  //         // }
+  //         if (snapshot.hasData) {
+  //           return ListTile(
+  //             title: Text(snapshot.data[0].label),
+  //           );
+  //         } else {
+  //           if (snapshot.hasError) {
+  //             print(snapshot.error);
+  //           }
+  //           return Container(
+  //             child: Text("No alarm"),
+  //           );
+  //         }
+  //       });
+  // }
 
   Widget alarmList() {
     get();
@@ -117,19 +132,29 @@ class _TimeOfDaysState extends State<TimeOfDays> {
       children: [
         _alarms != null
             ? (_alarms.length != 0
-                ? (ListTile(
-                    title: Text("Alarm set at 4:20",
-                        style: TextStyle(fontSize: 20, color: Colors.white)),
-                    onTap: () {
-                      print("Tapped 1");
-                    },
+                ? (Container(
+                    width: double.infinity / 1.2,
+                    height: 65,
+                    child: Center(
+                      child: Text("Alarm set at 4:20",
+                          style: TextStyle(fontSize: 30, color: Colors.white)),
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ))
-                : (ListTile(
-                    title: Text("No Alarms",
-                        style: TextStyle(fontSize: 20, color: Colors.white)),
-                    onTap: () {
-                      print("Tapped 1");
-                    },
+                : (Container(
+                    width: double.infinity / 1.2,
+                    height: 65,
+                    child: Center(
+                      child: Text("No Alarms",
+                          style: TextStyle(fontSize: 30, color: Colors.white)),
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.white),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   )))
             : Container()
       ],
@@ -138,8 +163,39 @@ class _TimeOfDaysState extends State<TimeOfDays> {
 
   Widget del() {
     var d;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 15, 0, 30),
+      child: ElevatedButton(        
+        child: Container(
+           width: double.infinity / 1.2,
+          height: 65,
+          child: Center(child: Text("Delete all",
+              style: TextStyle(fontSize: 30, color: Color(0xFF2A2A3B))))),
+        onPressed: () async {
+          d = await DBProvider.db.getAllClients();
+          if (d.length == 0) {
+            print("No items to be deleted");
+          } else {
+            DBProvider.db.deleteAll();
+            print(Text("All deleted"));
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          primary: Colors.white,
+          onPrimary: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+        ),
+      ),
+    );
     return MaterialButton(
-        child: Text("Delete all"),
+        color: Colors.white,
+        minWidth: double.infinity / 1.2,
+        height: 65,
+        child: Text("Delete all",
+            style: TextStyle(fontSize: 20, color: Colors.black)),
         onPressed: () async {
           d = await DBProvider.db.getAllClients();
           if (d.length == 0) {
@@ -171,23 +227,59 @@ class _TimeOfDaysState extends State<TimeOfDays> {
   }
 
   showNotification() async {
+    Random random = new Random();
+    int randomNumber = random.nextInt(2);
+
     var androidDetails = AndroidNotificationDetails(
-        'Channel ID', 'Adithya Anbu', 'my channel',
-        importance: Importance.max);
+      'this channel',
+      'Adithya Anbu',
+      'Adithya Anbu',
+      // priority: Priority.high,
+      icon: 'clock',
+      sound: RawResourceAndroidNotificationSound(
+          randomNumber == 0 ? 'dio' : "sasageyo"),
+      // sound: RawResourceAndroidNotificationSound('dio'),
+
+      largeIcon: DrawableResourceAndroidBitmap('clock'),
+      importance: Importance.max,
+      enableVibration: true,
+      // timeoutAfter: 280000,
+      playSound: true,
+    );
     var iosDetails = IOSNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true);
+        presentAlert: true, presentBadge: true, presentSound: true);
 
     var generalNotifications =
         NotificationDetails(android: androidDetails, iOS: iosDetails);
-    await flutterLocalNotificationsPlugin.show(
-        0, "title", "body", generalNotifications);
+
+    //variable for datetime
+    DateTime d = DateFormat('kk:mm:ss', 'en-US').parseLoose('21:34:45');
+
+    //to show instantly
+    Timer.periodic(Duration(seconds: 1), (cr) async {
+      if (DateTime.now() == d) {
+        print("object");
+      }
+    });
+
+    //checking if element is present in db or not
+    var e = await DBProvider.db.getAllClients();
+    if (e.length != 0) {
+      await flutterLocalNotificationsPlugin.show(0, "Wake yo ass up!!!",
+          "Click to cancel alarm", generalNotifications);
+    }
+
+    // await flutterLocalNotificationsPlugin.periodicallyShow(
+    //     0, "Wake yo ass up!!!", "Click to cancel alarm", RepeatInterval.daily, generalNotifications);
   }
+
+  //to schedule
+  // await flutterLocalNotificationsPlugin.zonedSchedule(0, "title", "body", DateTime.tuesday, notificationDetails, uiLocalNotificationDateInterpretation: uiLocalNotificationDateInterpretation, androidAllowWhileIdle: androidAllowWhileIdle)
 
   @override
   Widget build(BuildContext context) {
     // Timer.periodic(Duration(seconds: 1), (Timer t) => getSecond());
+
     return SafeArea(
       child: Container(
         padding: EdgeInsets.all(30),
@@ -205,6 +297,7 @@ class _TimeOfDaysState extends State<TimeOfDays> {
                           color: Colors.white))),
             ),
             alarmList(),
+            
             del(),
             // getAll(),
             FloatingActionButton(
@@ -219,10 +312,6 @@ class _TimeOfDaysState extends State<TimeOfDays> {
                     '/alarm',
                   );
                 }),
-            MaterialButton(
-              onPressed: showNotification,
-              child: Text("Notification"),
-            )
           ],
         ),
       ),

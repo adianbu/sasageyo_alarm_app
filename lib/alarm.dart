@@ -1,3 +1,4 @@
+import 'package:sasageyo/main.dart';
 import 'package:sasageyo/utils/clientModel.dart';
 import 'package:sasageyo/utils/database.dart';
 import 'package:flutter/material.dart';
@@ -59,7 +60,11 @@ class _AlarmState extends State<Alarm> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFF2A2A3B),
       appBar: AppBar(
+        elevation: 10,
+        shadowColor: Color(0xFF2A2A3B),
+        backgroundColor: Color(0xFF2A2A3B),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -67,11 +72,13 @@ class _AlarmState extends State<Alarm> {
             IconButton(
               icon: Icon(Icons.check),
               onPressed: () async {
+                //for entering into database
                 var e = await DBProvider.db.getAllClients();
                 if (e.length != 0) {
                   print("db full");
                   return Navigator.pop(context);
                 }
+
                 var newAlarm = Client(
                     id: i,
                     time: time,
@@ -80,7 +87,7 @@ class _AlarmState extends State<Alarm> {
                     label: label);
 
                 DBProvider.db.newClient(newAlarm);
-                
+
                 Navigator.pop(context);
               },
             )
@@ -89,13 +96,18 @@ class _AlarmState extends State<Alarm> {
       ),
       body: Column(
         children: [
-          Text("Next alarm will ring on"),
-          Text("Day, March 1"),
+          // Text("Next alarm will ring on"),
+          // Text("Day, March 1"),
+          
           Container(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text("Enter Time"),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text("Enter Time",
+                       style: TextStyle(fontSize: 30, color: Colors.white)),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -108,13 +120,17 @@ class _AlarmState extends State<Alarm> {
                             width: 80,
                             // color: Colors.amber,
                             child: TextField(
-                              decoration: InputDecoration(hintText: '00'),
+                              decoration: InputDecoration(hintText: '00',hintStyle: TextStyle(
+                                fontSize: 70,
+                                color: Colors.white
+                              ),),
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(2),
                               ],
                               keyboardType: TextInputType.number,
                               style: TextStyle(
                                 fontSize: 70,
+                                color: Colors.white
                               ),
                               cursorHeight: 70,
                               // cursorWidth: 10,
@@ -124,13 +140,15 @@ class _AlarmState extends State<Alarm> {
                               },
                             ),
                           ),
-                          Text("hour")
+                          Text("hour",
+                       style: TextStyle(fontSize: 20, color: Colors.white))
                         ],
                       ),
                     ),
                     Text(
                       ":",
-                      style: TextStyle(fontSize: 90),
+                      style: TextStyle(fontSize: 90,
+                      color: Colors.white),
                     ),
                     Expanded(
                       child: Column(
@@ -141,13 +159,17 @@ class _AlarmState extends State<Alarm> {
                             width: 80,
                             // color: Colors.amber,
                             child: TextField(
-                              decoration: InputDecoration(hintText: '00'),
+                              decoration: InputDecoration(hintText: '00',hintStyle: TextStyle(
+                                fontSize: 70,
+                                color: Colors.white
+                              ),),
                               inputFormatters: [
                                 LengthLimitingTextInputFormatter(2),
                               ],
                               keyboardType: TextInputType.number,
                               style: TextStyle(
                                 fontSize: 70,
+                                color: Colors.white
                               ),
                               cursorHeight: 70,
                               // cursorWidth: 10,
@@ -155,7 +177,8 @@ class _AlarmState extends State<Alarm> {
                               onChanged: (text) {},
                             ),
                           ),
-                          Text("minute")
+                          Text("minute",
+                       style: TextStyle(fontSize: 20, color: Colors.white))
                         ],
                       ),
                     ),
@@ -167,7 +190,11 @@ class _AlarmState extends State<Alarm> {
           Divider(
             color: Colors.grey,
           ),
-          Text("Repeat"),
+          Padding(
+            padding: const EdgeInsets.all(4.0),
+            child: Text("Repeat",
+                         style: TextStyle(fontSize: 20, color: Colors.white)),
+          ),
           Container(
             padding: EdgeInsets.only(left: 60),
             child: Center(
@@ -213,7 +240,8 @@ class _AlarmState extends State<Alarm> {
             color: Colors.grey,
           ),
           SwitchListTile(
-            title: Text("Vibrate"),
+            title: Text("Vibrate",
+                       style: TextStyle(fontSize: 20, color: Colors.white)),
             value: toggleVibrate,
             onChanged: (value) {
               setState(() {
@@ -221,14 +249,12 @@ class _AlarmState extends State<Alarm> {
               });
             },
           ),
+          
           ListTile(
-            title: Text("Alarm Duration"),
-            subtitle: Text("1 minute"),
-            onTap: () {},
-          ),
-          ListTile(
-            title: Text("Alarm Ringtone"),
-            subtitle: Text(ring),
+            title: Text("Alarm Ringtone",
+                       style: TextStyle(fontSize: 20, color: Colors.white)),
+            subtitle: Text(ring,
+                       style: TextStyle( color: Colors.white70)),
             onTap: () async {
               final ringName = await Navigator.pushNamed(context, '/ring');
               setState(() {
@@ -237,15 +263,25 @@ class _AlarmState extends State<Alarm> {
               print(ringName);
             },
           ),
+         
           ListTile(
-            title: Text("Label"),
-            subtitle: Text(label),
+            title: Text("Label",
+                       style: TextStyle(fontSize: 20, color: Colors.white)),
+            subtitle: Text(label,
+                       style: TextStyle( color: Colors.white70)),
+            
             onTap: () {
               return createDialog(context).then((value) {
                 setState(() {
                   label = value;
                 });
               });
+              
+              return TextField(
+                onChanged: (value) => setState(() {
+                  label = value;
+                }),
+              );
               // return showDialog(
               //     context: context,
               //     builder: (context) {

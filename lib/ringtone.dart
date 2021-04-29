@@ -11,33 +11,42 @@ class _RingtoneState extends State<Ringtone> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(),
+      backgroundColor: Color(0xFF2A2A3B),
+      appBar: AppBar(
+         backgroundColor: Color(0xFF2A2A3B),
+      ),
       body: SafeArea(
-        child: CustomRadioButton(
-          elevation: 0,
-          horizontal: false,
-          absoluteZeroSpacing: false,
-          unSelectedColor: Theme.of(context).canvasColor,
-          buttonLables: [
-            'Sasageyo',
-            'Kono Dio da',
-          ],
-          buttonValues: [
-            "Sasageyo",
-            "Kono Dio da",
-          ],
-          buttonTextStyle: ButtonTextStyle(
-              selectedColor: Colors.white,
-              unSelectedColor: Colors.black,
-              textStyle: TextStyle(fontSize: 16)),
-          radioButtonValue: (value) {
-            print(value);
-            setState(() {
-              ring2 = value;
-            });
-            Navigator.pop(context, ring2);
-          },
-          selectedColor: Theme.of(context).accentColor,
+        child: Center(
+          child: CustomRadioButton(
+            selectedBorderColor: Color(0xFF2A2A3B),
+            unSelectedBorderColor: Colors.white,
+            elevation: 0,
+            horizontal: true,
+            autoWidth: true,
+            height: 65,
+            absoluteZeroSpacing: false,
+            unSelectedColor: Theme.of(context).canvasColor,
+            buttonLables: [
+              'Sasageyo',
+              'Kono Dio da',
+            ],
+            buttonValues: [
+              "Sasageyo",
+              "Kono Dio da",
+            ],
+            buttonTextStyle: ButtonTextStyle(
+                selectedColor: Colors.white,
+                unSelectedColor: Color(0xFF2A2A3B),
+                textStyle: TextStyle(fontSize: 30)),
+            radioButtonValue: (value) {
+              print(value);
+              setState(() {
+                ring2 = value;
+              });
+              Navigator.pop(context, ring2);
+            },
+            selectedColor: Color(0xFF2A2A3B),
+          ),
         ),
       ),
     );
